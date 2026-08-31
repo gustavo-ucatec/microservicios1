@@ -6,9 +6,7 @@ import com.unir.buscador.repository.LibroRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -26,6 +24,7 @@ public class LibroController {
                                @RequestParam(required = false) String autor,
                                @RequestParam(required = false) Integer anio,
                                @RequestParam(required = false) Boolean disponible) {
+        // TODO: filtrar por los parámetros recibidos (todos opcionales).
         return libroRepository.findAll();
     }
 
@@ -36,28 +35,17 @@ public class LibroController {
     }
 
     @PostMapping
-    public ResponseEntity<Libro> crear(@RequestBody Libro libro,
-                                        UriComponentsBuilder uriBuilder) {
-        if (libro.getTitulo() == null || libro.getTitulo().isBlank()
-                || libro.getAutor() == null || libro.getAutor().isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-
-        libro.setId(null);
-
-        Libro guardado = libroRepository.save(libro);
-
-        URI location = uriBuilder
-                .path("/libros/{id}")
-                .buildAndExpand(guardado.getId())
-                .toUri();
-
-        return ResponseEntity.created(location).body(guardado);
+    public ResponseEntity<Libro> crear(@RequestBody Libro libro) {
+        // TODO: guardar el libro y devolver 201 Created con el recurso creado.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
+    // ms-operador llama aquí para marcar un libro como prestado/devuelto. Es la
+    // unica fuente de verdad sobre disponibilidad: evita que se preste dos veces.
     @PutMapping("/{id}/disponibilidad")
     public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
                                                            @RequestBody DisponibilidadRequest request) {
+        // TODO: actualizar el campo "disponible" del libro indicado.
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 }

@@ -24,8 +24,7 @@ public class LibroController {
                                @RequestParam(required = false) String autor,
                                @RequestParam(required = false) Integer anio,
                                @RequestParam(required = false) Boolean disponible) {
-        // TODO: filtrar por los parámetros recibidos (todos opcionales).
-        return libroRepository.findAll();
+        return libroRepository.buscarConFiltros(titulo, autor, anio, disponible);
     }
 
     @GetMapping("/{id}")

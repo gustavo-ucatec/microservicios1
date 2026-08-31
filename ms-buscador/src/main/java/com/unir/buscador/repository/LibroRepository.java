@@ -2,9 +2,24 @@ package com.unir.buscador.repository;
 
 import com.unir.buscador.model.Libro;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface LibroRepository extends JpaRepository<Libro, Long> {
 
-    // TODO: añadir aquí la consulta de búsqueda por título/autor/año/disponibilidad
-    // (todos los filtros opcionales) que usará LibroController#buscar.
+    @Query("""
+        SELECT l
+        FROM Libro l
+        WHERE (:titulo IS NULL OR :titulo = '' OR LOWER(l.titulo) LIKE LOWER(CONCAT('%', :titulo, '%')))
+          AND (:autor IS NULL OR :autor = '' OR LOWER(l.autor) LIKE LOWER(CONCAT('%', :autor, '%')))
+          AND (:anio IS NULL OR l.anioPublicacion = :anio)
+          AND (:disponible IS NULL OR l.disponible = :disponible)
+        ORDER BY l.id ASC
+    """)
+    List<Libro> buscarConFiltros(@Param("titulo") String titulo,
+                                 @Param("autor") String autor,
+                                 @Param("anio") Integer anio,
+                                 @Param("disponible") Boolean disponible);
 }

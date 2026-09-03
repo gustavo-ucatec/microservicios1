@@ -1,8 +1,10 @@
 package com.unir.buscador.controller;
 
 import com.unir.buscador.dto.DisponibilidadRequest;
+import com.unir.buscador.dto.NuevoLibroRequest;
 import com.unir.buscador.model.Libro;
 import com.unir.buscador.repository.LibroRepository;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +37,17 @@ public class LibroController {
     }
 
     @PostMapping
-    public ResponseEntity<Libro> crear(@RequestBody Libro libro) {
-        // TODO: guardar el libro y devolver 201 Created con el recurso creado.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    public ResponseEntity<Libro> crear(@Valid @RequestBody NuevoLibroRequest request) {
+        Libro libro = new Libro();
+        libro.setTitulo(request.getTitulo());
+        libro.setAutor(request.getAutor());
+        libro.setAnioPublicacion(request.getAnioPublicacion());
+        libro.setIsbn(request.getIsbn());
+        libro.setSinopsis(request.getSinopsis());
+        libro.setDisponible(request.getDisponible());
+
+        Libro creado = libroRepository.save(libro);
+        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     // ms-operador llama aquí para marcar un libro como prestado/devuelto. Es la

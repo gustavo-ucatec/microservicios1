@@ -6,7 +6,9 @@ import com.unir.buscador.repository.LibroRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -35,9 +37,26 @@ public class LibroController {
     }
 
     @PostMapping
-    public ResponseEntity<Libro> crear(@RequestBody Libro libro) {
-        // TODO: guardar el libro y devolver 201 Created con el recurso creado.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    public ResponseEntity<Libro> crear(@RequestBody Libro libro,
+                                        UriComponentsBuilder uriBuilder) {
+        // Validación básica: un libro sin título o autor no tiene sentido en el catálogo.
+        if (libro.getTitulo() == null || libro.getTitulo().isBlank()
+                || libro.getAutor() == null || libro.getAutor().isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        // El id lo genera la base de datos (@GeneratedValue): nos aseguramos de que
+        // no llegue uno desde el cliente, para no pisar un registro existente.
+        libro.setId(null);
+
+        Libro guardado = libroRepository.save(libro);
+
+        URI location = uriBuilder
+                .path("/libros/{id}")
+                .buildAndExpand(guardado.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(guardado);
     }
 
     // ms-operador llama aquí para marcar un libro como prestado/devuelto. Es la

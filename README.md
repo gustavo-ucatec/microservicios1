@@ -83,3 +83,5 @@ npm start
 
 Esto es un punto de partida razonable para dividir el trabajo en historias
 de usuario y sprints; adaptad el alcance a las decisiones de vuestro equipo.
+
+: ## Integrantes - Kevin Terrazas (POST /libros - ms-buscador)

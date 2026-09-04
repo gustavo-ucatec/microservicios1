@@ -3,6 +3,7 @@ package com.unir.buscador.controller;
 import com.unir.buscador.dto.DisponibilidadRequest;
 import com.unir.buscador.model.Libro;
 import com.unir.buscador.repository.LibroRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,13 +22,17 @@ public class LibroController {
         this.libroRepository = libroRepository;
     }
 
+    // GET /libros
+    // Permite buscar por título, autor, año y disponibilidad.
+    ///Todos los parámetros son opcionales.
     @GetMapping
-    public List<Libro> buscar(@RequestParam(required = false) String titulo,
-                               @RequestParam(required = false) String autor,
-                               @RequestParam(required = false) Integer anio,
-                               @RequestParam(required = false) Boolean disponible) {
-        // TODO: filtrar por los parámetros recibidos (todos opcionales).
-        return libroRepository.findAll();
+    public List<Libro> buscar(
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) Integer anio,
+            @RequestParam(required = false) Boolean disponible) {
+
+        return libroRepository.buscar(titulo, autor, anio, disponible);
     }
 
     @GetMapping("/{id}")
@@ -59,16 +64,12 @@ public class LibroController {
         return ResponseEntity.created(location).body(guardado);
     }
 
-    // ms-operador llama aquí para marcar un libro como prestado/devuelto. Es la
-    // unica fuente de verdad sobre disponibilidad: evita que se preste dos veces.
+    // ms-operador llama aquí para marcar un libro como prestado/devuelto.
+    // Es la única fuente de verdad sobre disponibilidad.
     @PutMapping("/{id}/disponibilidad")
     public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
                                                            @RequestBody DisponibilidadRequest request) {
-        return libroRepository.findById(id)
-                .map(libro -> {
-                    libro.setDisponible(request.isDisponible());
-                    return ResponseEntity.ok(libroRepository.save(libro));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        // TODO: actualizar el campo "disponible" del libro indicado.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 }

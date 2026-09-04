@@ -48,10 +48,8 @@ public class LibroController {
     // ms-operador llama aquí para marcar un libro como prestado/devuelto.
     // Es la única fuente de verdad sobre disponibilidad.
     @PutMapping("/{id}/disponibilidad")
-    public ResponseEntity<Libro> actualizarDisponibilidad(
-            @PathVariable Long id,
-            @RequestBody DisponibilidadRequest request) {
-
+    public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
+                                                           @RequestBody DisponibilidadRequest request) {
         // TODO: actualizar el campo "disponible" del libro indicado.
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }

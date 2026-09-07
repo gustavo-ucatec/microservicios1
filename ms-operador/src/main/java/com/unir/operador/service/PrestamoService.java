@@ -39,12 +39,22 @@ public class PrestamoService {
     }
 
     public Prestamo crear(NuevoPrestamoRequest request) {
-        // TODO:
-        //  1. Consultar el libro en ms-buscador con obtenerLibro(request.getLibroId()).
-        //  2. Si no está disponible, lanzar IllegalStateException.
-        //  3. Guardar un nuevo Prestamo (estado ACTIVO, fechaPrestamo = hoy).
-        //  4. Marcarlo como no disponible en ms-buscador con actualizarDisponibilidad.
-        throw new UnsupportedOperationException("TODO: implementar creación de préstamo");
+        LibroDto libro = obtenerLibro(request.getLibroId());
+
+        if (!libro.isDisponible()) {
+            throw new IllegalStateException("El libro ya esta prestado: " + request.getLibroId());
+        }
+
+        Prestamo prestamo = new Prestamo();
+        prestamo.setLibroId(libro.getId());
+        prestamo.setTituloLibro(libro.getTitulo());
+        prestamo.setUsuario(request.getUsuario());
+        prestamo.setFechaPrestamo(LocalDate.now());
+        prestamo.setEstado("ACTIVO");
+
+        Prestamo guardado = prestamoRepository.save(prestamo);
+        actualizarDisponibilidad(libro.getId(), false);
+        return guardado;
     }
 
     public Prestamo devolver(Long id) {

@@ -1,5 +1,14 @@
 import './App.css'
+import { FormularioPrestamo } from './components/FormularioPrestamo';
 
+function App() {
+  return (
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1>Gestión de Biblioteca</h1>
+      <FormularioPrestamo />
+    </div>
+  );
+}
 function App() {
   return (
     <div className="app">

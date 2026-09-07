@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/libros/{id}")
+@RequestMapping("/prestamos")
 public class PrestamoController {
 
     private final PrestamoService prestamoService;
@@ -20,14 +20,9 @@ public class PrestamoController {
         this.prestamoService = prestamoService;
     }
 
-     /*
-     * Obtiene la información del préstamo asociado directamente al ID del libro.
-     */
     @GetMapping
-    public ResponseEntity<Prestamo> obtenerPorLibroId(@PathVariable("id") Long id) {
-        return prestamoService.obtener(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public List<Prestamo> listar() {
+        return prestamoService.listar();
     }
 
     @GetMapping("/{id}")
@@ -37,8 +32,8 @@ public class PrestamoController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/prestamos")
-    public ResponseEntity<?> crear(@PathVariable("id") Long id, @RequestBody NuevoPrestamoRequest request) {
+    @PostMapping
+    public ResponseEntity<?> crear(@RequestBody NuevoPrestamoRequest request) {
         try {
             Prestamo creado = prestamoService.crear(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(creado);
@@ -49,11 +44,8 @@ public class PrestamoController {
         }
     }
 
-     /*
-     * Procesa la devolución del libro correspondiente al ID.
-     */
-    @PutMapping("/prestamos")
-    public ResponseEntity<?> devolver(@PathVariable("id") Long id) {
+    @PutMapping("/{id}")
+    public ResponseEntity<?> devolver(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(prestamoService.devolver(id));
         } catch (NoSuchElementException ex) {

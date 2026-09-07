@@ -1,10 +1,10 @@
 package com.unir.operador.service;
 
-import com.unir.operador.dto.DisponibilidadRequest;
 import com.unir.operador.dto.LibroDto;
 import com.unir.operador.dto.NuevoPrestamoRequest;
 import com.unir.operador.model.Prestamo;
 import com.unir.operador.repository.PrestamoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -17,26 +17,37 @@ import java.util.Optional;
 @Service
 public class PrestamoService {
 
-    // "ms-buscador" es el nombre con el que ese microservicio se registra en Eureka.
-    // No usamos IP ni puerto: el LoadBalancer los resuelve a partir del registro.
-    private static final String URL_LIBRO = "http://ms-buscador/libros/{id}";
-    private static final String URL_DISPONIBILIDAD = "http://ms-buscador/libros/{id}/disponibilidad";
+    @Autowired
+    private PrestamoRepository prestamoRepository;
 
-    private final PrestamoRepository prestamoRepository;
-    private final RestTemplate restTemplate;
+    @Autowired
+    private RestTemplate restTemplate;
 
-    public PrestamoService(PrestamoRepository prestamoRepository, RestTemplate restTemplate) {
-        this.prestamoRepository = prestamoRepository;
-        this.restTemplate = restTemplate;
-    }
+    public Prestamo crear(NuevoPrestamoRequest request) {
+        // 1. Consultar el libro en ms-buscador
+        LibroDto libro = obtenerLibro(request.getLibroId());
+        
+        // 2. Si no está disponible, lanzar IllegalStateException
+        if (libro == null || !libro.isDisponible()) {
+            throw new IllegalStateException("El libro no existe o no está disponible para préstamo");
+        }
 
-    public List<Prestamo> listar() {
-        return prestamoRepository.findAll();
-    }
+        // 3. Guardar un nuevo Prestamo (estado ACTIVO, fechaPrestamo = hoy)
+        Prestamo prestamo = new Prestamo();
+        prestamo.setLibroId(request.getLibroId());
+        
+        // Se usa setUsuario basándose en la entidad Prestamo.java
+        prestamo.setUsuario(request.getUsuario()); 
+        
+        prestamo.setFechaPrestamo(LocalDate.now());
+        
+        // Se usa setEstado basándose en la entidad Prestamo.java
+        prestamo.setEstado("ACTIVO");
+        
+        Prestamo guardado = prestamoRepository.save(prestamo);
 
-    public Optional<Prestamo> obtener(Long id) {
-        return prestamoRepository.findById(id);
-    }
+        // 4. Marcarlo como no disponible en ms-buscador
+        actualizarDisponibilidad(request.getLibroId(), false);
 
     public Prestamo crear(NuevoPrestamoRequest request) {
         LibroDto libro = obtenerLibro(request.getLibroId());

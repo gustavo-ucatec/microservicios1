@@ -2,11 +2,13 @@ package com.unir.buscador.controller;
 
 import com.unir.buscador.model.Libro;
 import com.unir.buscador.repository.LibroRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -23,8 +25,17 @@ public class LibroController {
             @RequestParam(required = false) Integer anioPublicacion,
             @RequestParam(required = false) Boolean disponible) {
 
-        List<Libro> libros = libroRepository.buscarConFiltros(titulo, autor, anioPublicacion, disponible);
-        return ResponseEntity.ok(libros);
+    // GET /libros
+    // Permite buscar por título, autor, año y disponibilidad.
+    ///Todos los parámetros son opcionales.
+    @GetMapping
+    public List<Libro> buscar(
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) Integer anio,
+            @RequestParam(required = false) Boolean disponible) {
+
+        return libroRepository.buscar(titulo, autor, anio, disponible);
     }
 
     // 2. Obtener por ID
@@ -35,29 +46,35 @@ public class LibroController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // 3. Crear libro
-    @PostMapping("/libros")
-    public ResponseEntity<Libro> crearLibro(@RequestBody Libro libro) {
-        // Por defecto, al crear un libro lo ponemos como disponible si no se especifica
-        if (libro.isDisponible() == false) {
-            libro.setDisponible(true); 
+    @PostMapping
+    public ResponseEntity<Libro> crear(@RequestBody Libro libro,
+                                        UriComponentsBuilder uriBuilder) {
+        // Validación básica: un libro sin título o autor no tiene sentido en el catálogo.
+        if (libro.getTitulo() == null || libro.getTitulo().isBlank()
+                || libro.getAutor() == null || libro.getAutor().isBlank()) {
+            return ResponseEntity.badRequest().build();
         }
+
+        // El id lo genera la base de datos (@GeneratedValue): nos aseguramos de que
+        // no llegue uno desde el cliente, para no pisar un registro existente.
+        libro.setId(null);
+
         Libro guardado = libroRepository.save(libro);
-        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
+
+        URI location = uriBuilder
+                .path("/libros/{id}")
+                .buildAndExpand(guardado.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(guardado);
     }
 
-    // 4. Actualizar disponibilidad
-    @PutMapping("/libros/{id}/disponibilidad")
-    public ResponseEntity<Libro> actualizarDisponibilidad(
-            @PathVariable Long id, 
-            @RequestParam Boolean disponible) {
-        
-        return libroRepository.findById(id)
-                .map(libro -> {
-                    libro.setDisponible(disponible);
-                    Libro actualizado = libroRepository.save(libro);
-                    return ResponseEntity.ok(actualizado);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    // ms-operador llama aquí para marcar un libro como prestado/devuelto.
+    // Es la única fuente de verdad sobre disponibilidad.
+    @PutMapping("/{id}/disponibilidad")
+    public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
+                                                           @RequestBody DisponibilidadRequest request) {
+        // TODO: actualizar el campo "disponible" del libro indicado.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 }

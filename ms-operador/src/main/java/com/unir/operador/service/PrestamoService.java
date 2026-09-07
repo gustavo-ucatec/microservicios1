@@ -10,7 +10,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Service
 public class PrestamoService {
@@ -47,37 +49,51 @@ public class PrestamoService {
         // 4. Marcarlo como no disponible en ms-buscador
         actualizarDisponibilidad(request.getLibroId(), false);
 
+    public Prestamo crear(NuevoPrestamoRequest request) {
+        LibroDto libro = obtenerLibro(request.getLibroId());
+
+        if (!libro.isDisponible()) {
+            throw new IllegalStateException("El libro ya esta prestado: " + request.getLibroId());
+        }
+
+        Prestamo prestamo = new Prestamo();
+        prestamo.setLibroId(libro.getId());
+        prestamo.setTituloLibro(libro.getTitulo());
+        prestamo.setUsuario(request.getUsuario());
+        prestamo.setFechaPrestamo(LocalDate.now());
+        prestamo.setEstado("ACTIVO");
+
+        Prestamo guardado = prestamoRepository.save(prestamo);
+        actualizarDisponibilidad(libro.getId(), false);
         return guardado;
     }
 
     public Prestamo devolver(Long id) {
-        // 1. Buscar el préstamo (o lanzar NoSuchElementException si no existe)
         Prestamo prestamo = prestamoRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Préstamo no encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Préstamo no encontrado: " + id));
 
-        // 2. Marcarlo como DEVUELTO con fechaDevolucion = hoy y guardarlo
         prestamo.setEstado("DEVUELTO");
         prestamo.setFechaDevolucion(LocalDate.now());
-        Prestamo actualizado = prestamoRepository.save(prestamo);
+        Prestamo guardado = prestamoRepository.save(prestamo);
 
-        // 3. Avisar a ms-buscador de que el libro vuelve a estar disponible
-        actualizarDisponibilidad(prestamo.getLibroId(), true);
-
-        return actualizado;
+        actualizarDisponibilidad(guardado.getLibroId(), true);
+        return guardado;
     }
 
+    @SuppressWarnings("unused")
     private LibroDto obtenerLibro(Long libroId) {
         try {
-            // GET a URL LIBRO. Eureka resuelve "ms-buscador"
-            return restTemplate.getForObject("http://ms-buscador/libros/" + libroId, LibroDto.class);
-        } catch (HttpClientErrorException.NotFound e) {
-            throw new NoSuchElementException("Libro no encontrado en el catálogo");
+            LibroDto libro = restTemplate.getForObject(URL_LIBRO, LibroDto.class, libroId);
+            if (libro == null) {
+                throw new NoSuchElementException("Libro no encontrado: " + libroId);
+            }
+            return libro;
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new NoSuchElementException("Libro no encontrado: " + libroId);
         }
     }
 
     private void actualizarDisponibilidad(Long libroId, boolean disponible) {
-        // Consumimos el endpoint PUT que creamos en LibroController
-        String url = "http://ms-buscador/libros/" + libroId + "/disponibilidad?disponible=" + disponible;
-        restTemplate.put(url, null);
+        restTemplate.put(URL_DISPONIBILIDAD, new DisponibilidadRequest(disponible), libroId);
     }
 }

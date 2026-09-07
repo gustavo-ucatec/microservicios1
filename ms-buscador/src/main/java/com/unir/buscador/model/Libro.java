@@ -1,10 +1,20 @@
 package com.unir.buscador.model;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
+@JsonPropertyOrder({
+    "id",
+    "titulo",
+    "autor",
+    "anioPublicacion",
+    "isbn",
+    "sinopsis",
+    "disponible"
+})
 @Entity
 public class Libro {
 
@@ -19,8 +29,7 @@ public class Libro {
     private String sinopsis;
     private boolean disponible;
 
-    public Libro() {
-    }
+    public Libro() {}
 
     public Long getId() {
         return id;

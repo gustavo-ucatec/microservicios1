@@ -6,9 +6,12 @@ import com.unir.operador.dto.NuevoPrestamoRequest;
 import com.unir.operador.model.Prestamo;
 import com.unir.operador.repository.PrestamoRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -45,20 +48,31 @@ public class PrestamoService {
     }
 
     public Prestamo devolver(Long id) {
-        // TODO:
-        //  1. Buscar el préstamo (o lanzar NoSuchElementException si no existe).
-        //  2. Marcarlo como DEVUELTO con fechaDevolucion = hoy y guardarlo.
-        //  3. Avisar a ms-buscador de que el libro vuelve a estar disponible.
-        throw new UnsupportedOperationException("TODO: implementar devolución de préstamo");
+        Prestamo prestamo = prestamoRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Préstamo no encontrado: " + id));
+
+        prestamo.setEstado("DEVUELTO");
+        prestamo.setFechaDevolucion(LocalDate.now());
+        Prestamo guardado = prestamoRepository.save(prestamo);
+
+        actualizarDisponibilidad(guardado.getLibroId(), true);
+        return guardado;
     }
 
+    @SuppressWarnings("unused")
     private LibroDto obtenerLibro(Long libroId) {
-        // TODO: GET a URL_LIBRO. Traducir un 404 del buscador en NoSuchElementException.
-        throw new UnsupportedOperationException("TODO: implementar");
+        try {
+            LibroDto libro = restTemplate.getForObject(URL_LIBRO, LibroDto.class, libroId);
+            if (libro == null) {
+                throw new NoSuchElementException("Libro no encontrado: " + libroId);
+            }
+            return libro;
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new NoSuchElementException("Libro no encontrado: " + libroId);
+        }
     }
 
     private void actualizarDisponibilidad(Long libroId, boolean disponible) {
-        // TODO: PUT a URL_DISPONIBILIDAD con un DisponibilidadRequest(disponible).
-        throw new UnsupportedOperationException("TODO: implementar");
+        restTemplate.put(URL_DISPONIBILIDAD, new DisponibilidadRequest(disponible), libroId);
     }
 }

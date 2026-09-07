@@ -1,8 +1,8 @@
 package com.unir.buscador.controller;
 
-import com.unir.buscador.dto.DisponibilidadRequest;
 import com.unir.buscador.model.Libro;
 import com.unir.buscador.repository.LibroRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,42 +10,54 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/libros")
 public class LibroController {
 
-    private final LibroRepository libroRepository;
+    @Autowired
+    private LibroRepository libroRepository;
 
-    public LibroController(LibroRepository libroRepository) {
-        this.libroRepository = libroRepository;
+    // 1. Listar y Buscar con filtros
+    @GetMapping("/libros")
+    public ResponseEntity<List<Libro>> listarLibros(
+            @RequestParam(required = false) String titulo,
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) Integer anioPublicacion,
+            @RequestParam(required = false) Boolean disponible) {
+
+        List<Libro> libros = libroRepository.buscarConFiltros(titulo, autor, anioPublicacion, disponible);
+        return ResponseEntity.ok(libros);
     }
 
-    @GetMapping
-    public List<Libro> buscar(@RequestParam(required = false) String titulo,
-                               @RequestParam(required = false) String autor,
-                               @RequestParam(required = false) Integer anio,
-                               @RequestParam(required = false) Boolean disponible) {
-        // TODO: filtrar por los parámetros recibidos (todos opcionales).
-        return libroRepository.findAll();
+    // 2. Obtener por ID
+    @GetMapping("/libros/{id}")
+    public ResponseEntity<Libro> obtenerLibro(@PathVariable Long id) {
+        return libroRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Libro> obtener(@PathVariable Long id) {
-        // TODO: devolver el libro si existe, o 404 si no.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    // 3. Crear libro
+    @PostMapping("/libros")
+    public ResponseEntity<Libro> crearLibro(@RequestBody Libro libro) {
+        // Por defecto, al crear un libro lo ponemos como disponible si no se especifica
+        if (libro.isDisponible() == false) {
+            libro.setDisponible(true); 
+        }
+        Libro guardado = libroRepository.save(libro);
+        return ResponseEntity.status(HttpStatus.CREATED).body(guardado);
     }
 
-    @PostMapping
-    public ResponseEntity<Libro> crear(@RequestBody Libro libro) {
-        // TODO: guardar el libro y devolver 201 Created con el recurso creado.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
-    }
-
-    // ms-operador llama aquí para marcar un libro como prestado/devuelto. Es la
-    // unica fuente de verdad sobre disponibilidad: evita que se preste dos veces.
-    @PutMapping("/{id}/disponibilidad")
-    public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
-                                                           @RequestBody DisponibilidadRequest request) {
-        // TODO: actualizar el campo "disponible" del libro indicado.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    // 4. Actualizar disponibilidad
+    @PutMapping("/libros/{id}/disponibilidad")
+    public ResponseEntity<Libro> actualizarDisponibilidad(
+            @PathVariable Long id, 
+            @RequestParam Boolean disponible) {
+        
+        return libroRepository.findById(id)
+                .map(libro -> {
+                    libro.setDisponible(disponible);
+                    Libro actualizado = libroRepository.save(libro);
+                    return ResponseEntity.ok(actualizado);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

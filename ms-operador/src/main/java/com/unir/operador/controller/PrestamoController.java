@@ -2,54 +2,42 @@ package com.unir.operador.controller;
 
 import com.unir.operador.dto.NuevoPrestamoRequest;
 import com.unir.operador.model.Prestamo;
+import com.unir.operador.repository.PrestamoRepository;
 import com.unir.operador.service.PrestamoService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
-@RequestMapping("/prestamos")
 public class PrestamoController {
 
-    private final PrestamoService prestamoService;
+    @Autowired
+    private PrestamoService prestamoService;
 
-    public PrestamoController(PrestamoService prestamoService) {
-        this.prestamoService = prestamoService;
+    @Autowired
+    private PrestamoRepository prestamoRepository;
+
+    // Crear un préstamo
+    @PostMapping("/prestamos")
+    public ResponseEntity<Prestamo> crearPrestamo(@RequestBody NuevoPrestamoRequest request) {
+        Prestamo prestamo = prestamoService.crear(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(prestamo);
     }
 
-    @GetMapping
-    public List<Prestamo> listar() {
-        return prestamoService.listar();
+    // Listar todos los préstamos
+    @GetMapping("/prestamos")
+    public ResponseEntity<List<Prestamo>> listarPrestamos() {
+        List<Prestamo> prestamos = prestamoRepository.findAll();
+        return ResponseEntity.ok(prestamos);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Prestamo> obtener(@PathVariable Long id) {
-        return prestamoService.obtener(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public ResponseEntity<?> crear(@RequestBody NuevoPrestamoRequest request) {
-        try {
-            Prestamo creado = prestamoService.crear(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(creado);
-        } catch (NoSuchElementException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (IllegalStateException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(ex.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> devolver(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(prestamoService.devolver(id));
-        } catch (NoSuchElementException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        }
+    // Devolver un préstamo
+    @PutMapping("/prestamos/{id}/devolucion")
+    public ResponseEntity<Prestamo> devolverPrestamo(@PathVariable Long id) {
+        Prestamo prestamo = prestamoService.devolver(id);
+        return ResponseEntity.ok(prestamo);
     }
 }

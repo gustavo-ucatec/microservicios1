@@ -1,4 +1,4 @@
- package com.unir.buscador;
+package com.unir.buscador.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

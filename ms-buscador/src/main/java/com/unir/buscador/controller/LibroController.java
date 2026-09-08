@@ -1,5 +1,6 @@
 package com.unir.buscador.controller;
 
+import com.unir.buscador.dto.DisponibilidadRequest;
 import com.unir.buscador.model.Libro;
 import com.unir.buscador.repository.LibroRepository;
 
@@ -12,18 +13,14 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
+@RequestMapping("/libros")
 public class LibroController {
 
-    @Autowired
-    private LibroRepository libroRepository;
+    private final LibroRepository libroRepository;
 
-    // 1. Listar y Buscar con filtros
-    @GetMapping("/libros")
-    public ResponseEntity<List<Libro>> listarLibros(
-            @RequestParam(required = false) String titulo,
-            @RequestParam(required = false) String autor,
-            @RequestParam(required = false) Integer anioPublicacion,
-            @RequestParam(required = false) Boolean disponible) {
+    public LibroController(LibroRepository libroRepository) {
+        this.libroRepository = libroRepository;
+    }
 
     // GET /libros
     // Permite buscar por título, autor, año y disponibilidad.
@@ -38,12 +35,10 @@ public class LibroController {
         return libroRepository.buscar(titulo, autor, anio, disponible);
     }
 
-    // 2. Obtener por ID
-    @GetMapping("/libros/{id}")
-    public ResponseEntity<Libro> obtenerLibro(@PathVariable Long id) {
-        return libroRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping("/{id}")
+    public ResponseEntity<Libro> obtener(@PathVariable Long id) {
+        // TODO: devolver el libro si existe, o 404 si no.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 
     @PostMapping

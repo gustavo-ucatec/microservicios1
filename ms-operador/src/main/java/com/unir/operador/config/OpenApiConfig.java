@@ -1,4 +1,4 @@
-package com.unir.buscador.config;
+package com.unir.operador.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,8 +12,8 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI openApi() {
         return new OpenAPI().info(new Info()
-            .title("ms-buscador API")
+            .title("ms-operador API")
             .version("1.0.0")
-            .description("Catálogo de libros"));
+            .description("Gestión de préstamos"));
     }
 }

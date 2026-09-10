@@ -37,8 +37,9 @@ public class LibroController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Libro> obtener(@PathVariable Long id) {
-        // TODO: devolver el libro si existe, o 404 si no.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        return libroRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -69,7 +70,11 @@ public class LibroController {
     @PutMapping("/{id}/disponibilidad")
     public ResponseEntity<Libro> actualizarDisponibilidad(@PathVariable Long id,
                                                            @RequestBody DisponibilidadRequest request) {
-        // TODO: actualizar el campo "disponible" del libro indicado.
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        return libroRepository.findById(id)
+                .map(libro -> {
+                    libro.setDisponible(request.isDisponible());
+                    return ResponseEntity.ok(libroRepository.save(libro));
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }
